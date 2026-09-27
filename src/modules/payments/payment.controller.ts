@@ -1,6 +1,10 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { PaymentService } from './payment.service.js';
-import { createPaymentSchema, listPaymentsQuerySchema, paymentIdParamSchema } from './payment.schemas.js';
+import {
+  createPaymentSchema,
+  listPaymentsQuerySchema,
+  paymentIdParamSchema,
+} from './payment.schemas.js';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { getFortpesaProvider } from '../../providers/fortpesa/index.js';
 import { AuthenticationError, ValidationError } from '../../shared/errors/index.js';

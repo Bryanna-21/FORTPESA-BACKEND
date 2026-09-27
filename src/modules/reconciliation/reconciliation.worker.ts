@@ -185,7 +185,8 @@ async function main(): Promise<void> {
   }
 }
 
-const isDirectExecution = process.argv[1]?.endsWith('reconciliation.worker.ts') ||
+const isDirectExecution =
+  process.argv[1]?.endsWith('reconciliation.worker.ts') ||
   process.argv[1]?.endsWith('reconciliation.worker.js');
 
 if (isDirectExecution) {

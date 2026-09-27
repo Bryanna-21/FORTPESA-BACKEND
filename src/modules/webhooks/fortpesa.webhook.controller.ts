@@ -68,18 +68,20 @@ export async function handleFortpesaWebhook(req: FastifyRequest, reply: FastifyR
     throw err;
   }
 
-  await prisma.webhookEvent.update({
-    where: { id: webhookEventDraft.id },
-    data: { signatureValid: true, providerEventId: verifiedEvent.providerEventId },
-  }).catch((err: unknown) => {
-    // A concurrent delivery of the same (providerName, providerEventId)
-    // pair can race this update into a unique-constraint violation. That
-    // race is harmless: the concurrent delivery's own request will carry
-    // this event through applySettlement, which is idempotent against a
-    // terminal payment regardless of which delivery gets there first. We
-    // still surface anything other than a unique violation.
-    if (!isUniqueConstraintViolation(err)) throw err;
-  });
+  await prisma.webhookEvent
+    .update({
+      where: { id: webhookEventDraft.id },
+      data: { signatureValid: true, providerEventId: verifiedEvent.providerEventId },
+    })
+    .catch((err: unknown) => {
+      // A concurrent delivery of the same (providerName, providerEventId)
+      // pair can race this update into a unique-constraint violation. That
+      // race is harmless: the concurrent delivery's own request will carry
+      // this event through applySettlement, which is idempotent against a
+      // terminal payment regardless of which delivery gets there first. We
+      // still surface anything other than a unique violation.
+      if (!isUniqueConstraintViolation(err)) throw err;
+    });
 
   await new AuditService(prisma).record({
     action: AUDIT_ACTIONS.WEBHOOK_VERIFIED,
@@ -123,7 +125,11 @@ export async function handleFortpesaWebhook(req: FastifyRequest, reply: FastifyR
     );
     await prisma.webhookEvent.update({
       where: { id: webhookEventDraft.id },
-      data: { processingResult: 'amount_mismatch', processedAt: new Date(), paymentId: providerTransaction.paymentId },
+      data: {
+        processingResult: 'amount_mismatch',
+        processedAt: new Date(),
+        paymentId: providerTransaction.paymentId,
+      },
     });
     return reply.code(200).send({ success: true, data: { received: true }, requestId: req.id });
   }

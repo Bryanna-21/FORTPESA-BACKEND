@@ -1,5 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
-import { generateApiKey, splitApiKey, verifyApiKeySecret } from '../../infrastructure/security/apiKey.js';
+import {
+  generateApiKey,
+  splitApiKey,
+  verifyApiKeySecret,
+} from '../../infrastructure/security/apiKey.js';
 import { AuthenticationError } from '../../shared/errors/index.js';
 import type { ApiKeyScope, AuthenticatedPrincipal } from '../../shared/types/index.js';
 

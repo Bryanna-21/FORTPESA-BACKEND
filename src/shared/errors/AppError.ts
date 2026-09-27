@@ -72,7 +72,12 @@ export class ProviderTimeoutError extends ProviderError {
   override readonly code = 'PROVIDER_TIMEOUT';
 
   constructor(providerName: string, details?: Record<string, unknown>) {
-    super(`${providerName} did not respond within the configured timeout.`, providerName, true, details);
+    super(
+      `${providerName} did not respond within the configured timeout.`,
+      providerName,
+      true,
+      details,
+    );
   }
 }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { PrismaClient } from '@prisma/client';
 import { PaymentService } from '../../src/modules/payments/payment.service.js';
 import { createFakePrisma } from './fakePrisma.js';
 import { FakePaymentProvider } from './fakeProvider.js';
@@ -6,7 +7,7 @@ import { FakePaymentProvider } from './fakeProvider.js';
 function buildService() {
   const db = createFakePrisma();
   const provider = new FakePaymentProvider();
-  const service = new PaymentService(db as any, provider);
+  const service = new PaymentService(db as unknown as PrismaClient, provider);
   return { db, provider, service };
 }
 
@@ -45,9 +46,9 @@ describe('PaymentService.createPayment — duplicate protection', () => {
 
     await service.createPayment(baseInput, ctx);
 
-    await expect(
-      service.createPayment({ ...baseInput, amount: 99999 }, ctx),
-    ).rejects.toThrow(/different request payload/);
+    await expect(service.createPayment({ ...baseInput, amount: 99999 }, ctx)).rejects.toThrow(
+      /different request payload/,
+    );
   });
 
   it('creates separate payments for different idempotency keys', async () => {
@@ -99,7 +100,7 @@ describe('PaymentService.createPayment — duplicate protection', () => {
       requestId: 'req-1',
     });
 
-    const feeEntries = db.__inspect.ledgerEntries.filter((entry: any) => entry.type === 'FEE');
+    const feeEntries = db.__inspect.ledgerEntries.filter((entry) => entry.type === 'FEE');
     expect(feeEntries).toHaveLength(1);
     expect(feeEntries[0].amountMinor).toBe(50);
   });
@@ -132,7 +133,7 @@ describe('PaymentService.applySettlement — webhook/reconciliation idempotency'
     expect(finalPayment.status).toBe('SUCCEEDED');
 
     const paymentLedgerEntries = db.__inspect.ledgerEntries.filter(
-      (entry: any) => entry.type === 'PAYMENT' && entry.paymentId === payment.id,
+      (entry) => entry.type === 'PAYMENT' && entry.paymentId === payment.id,
     );
     expect(paymentLedgerEntries).toHaveLength(1);
   });
@@ -166,7 +167,7 @@ describe('PaymentService.applySettlement — webhook/reconciliation idempotency'
 
     expect(result.status).toBe('CANCELLED');
     const paymentLedgerEntries = db.__inspect.ledgerEntries.filter(
-      (entry: any) => entry.type === 'PAYMENT' && entry.paymentId === orphaned.id,
+      (entry) => entry.type === 'PAYMENT' && entry.paymentId === orphaned.id,
     );
     expect(paymentLedgerEntries).toHaveLength(0);
   });

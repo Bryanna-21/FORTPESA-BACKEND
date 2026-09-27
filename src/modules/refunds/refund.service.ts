@@ -82,7 +82,10 @@ export class RefundService {
 
   /** Admin confirms a refund has actually been completed against Fortpesa. */
   async markSucceeded(refundId: string, requestId: string): Promise<Refund> {
-    const refund = await this.db.refund.findUnique({ where: { id: refundId }, include: { payment: true } });
+    const refund = await this.db.refund.findUnique({
+      where: { id: refundId },
+      include: { payment: true },
+    });
     if (!refund) throw new NotFoundError('Refund could not be found.');
     if (refund.status === 'SUCCEEDED') return refund;
     if (refund.status === 'FAILED') {
@@ -122,7 +125,10 @@ export class RefundService {
       throw new ConflictError('Cannot mark a succeeded refund as failed.');
     }
 
-    const updated = await this.db.refund.update({ where: { id: refundId }, data: { status: 'FAILED' } });
+    const updated = await this.db.refund.update({
+      where: { id: refundId },
+      data: { status: 'FAILED' },
+    });
 
     await new AuditService(this.db).record({
       action: AUDIT_ACTIONS.REFUND_CREATED,
@@ -136,7 +142,10 @@ export class RefundService {
   }
 
   async getById(refundId: string, merchantId: string): Promise<Refund> {
-    const refund = await this.db.refund.findUnique({ where: { id: refundId }, include: { payment: true } });
+    const refund = await this.db.refund.findUnique({
+      where: { id: refundId },
+      include: { payment: true },
+    });
     if (!refund || refund.payment.merchantId !== merchantId) {
       throw new NotFoundError('Refund could not be found.');
     }

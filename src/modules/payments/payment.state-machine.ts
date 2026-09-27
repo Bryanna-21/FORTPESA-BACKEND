@@ -22,9 +22,10 @@ export function isRetryable(status: PaymentStatus): boolean {
 export function assertLegalTransition(from: PaymentStatus, to: PaymentStatus): void {
   const allowed = LEGAL_TRANSITIONS[from];
   if (!allowed.includes(to)) {
-    throw new InvalidStateTransitionError(
-      `Cannot transition payment from ${from} to ${to}.`,
-      { from, to, allowed },
-    );
+    throw new InvalidStateTransitionError(`Cannot transition payment from ${from} to ${to}.`, {
+      from,
+      to,
+      allowed,
+    });
   }
 }

@@ -14,20 +14,30 @@ describe('money utilities', () => {
   });
 
   it('rejects non-integer amounts', () => {
-    expect(() => assertValidAmountMinorUnits(15.5, { min: 100, max: 100000 })).toThrow(ValidationError);
+    expect(() => assertValidAmountMinorUnits(15.5, { min: 100, max: 100000 })).toThrow(
+      ValidationError,
+    );
   });
 
   it('rejects zero and negative amounts', () => {
-    expect(() => assertValidAmountMinorUnits(0, { min: 100, max: 100000 })).toThrow(ValidationError);
-    expect(() => assertValidAmountMinorUnits(-500, { min: 100, max: 100000 })).toThrow(ValidationError);
+    expect(() => assertValidAmountMinorUnits(0, { min: 100, max: 100000 })).toThrow(
+      ValidationError,
+    );
+    expect(() => assertValidAmountMinorUnits(-500, { min: 100, max: 100000 })).toThrow(
+      ValidationError,
+    );
   });
 
   it('rejects amounts below the minimum', () => {
-    expect(() => assertValidAmountMinorUnits(50, { min: 100, max: 100000 })).toThrow(ValidationError);
+    expect(() => assertValidAmountMinorUnits(50, { min: 100, max: 100000 })).toThrow(
+      ValidationError,
+    );
   });
 
   it('rejects amounts above the maximum', () => {
-    expect(() => assertValidAmountMinorUnits(200000, { min: 100, max: 100000 })).toThrow(ValidationError);
+    expect(() => assertValidAmountMinorUnits(200000, { min: 100, max: 100000 })).toThrow(
+      ValidationError,
+    );
   });
 
   it('rejects unsupported currencies', () => {

@@ -36,7 +36,9 @@ export function parseFortpesaWebhookPayload(rawBody: string): FortpesaWebhookPay
   }
 
   if (!isFortpesaWebhookPayload(parsed)) {
-    throw new WebhookVerificationError('Webhook body does not match the expected Fortpesa event shape.');
+    throw new WebhookVerificationError(
+      'Webhook body does not match the expected Fortpesa event shape.',
+    );
   }
 
   return parsed;

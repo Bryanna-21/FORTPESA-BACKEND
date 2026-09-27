@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { loadEnv } from '../configuration/env.js';
 import { logger } from '../logging/logger.js';
 
@@ -9,7 +9,7 @@ export const redis = new Redis(env.REDIS_URL, {
   lazyConnect: false,
 });
 
-redis.on('error', (err) => {
+redis.on('error', (err: Error) => {
   logger.error({ err }, 'Redis connection error');
 });
 
@@ -21,7 +21,10 @@ export type QueueName = 'reconciliation' | 'retries' | 'notifications';
  * requires it — the interface below is the seam to swap in a heavier queue
  * without touching call sites.
  */
-export async function enqueueJob(queue: QueueName, payload: Record<string, unknown>): Promise<void> {
+export async function enqueueJob(
+  queue: QueueName,
+  payload: Record<string, unknown>,
+): Promise<void> {
   await redis.lpush(`queue:${queue}`, JSON.stringify(payload));
 }
 

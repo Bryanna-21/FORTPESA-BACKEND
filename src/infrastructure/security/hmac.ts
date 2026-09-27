@@ -16,7 +16,9 @@ export function computeHmacSha256Hex(rawBody: string | Buffer, secret: string): 
 
 function normalizeSignature(signature: string): string {
   const prefixed = signature.trim();
-  const withoutPrefix = prefixed.startsWith('sha256=') ? prefixed.slice('sha256='.length) : prefixed;
+  const withoutPrefix = prefixed.startsWith('sha256=')
+    ? prefixed.slice('sha256='.length)
+    : prefixed;
   return withoutPrefix.toLowerCase();
 }
 

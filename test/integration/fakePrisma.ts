@@ -74,7 +74,9 @@ export function createFakePrisma() {
         return updated;
       },
       count: async ({ where }: any = {}) =>
-        [...payments.values()].filter((p) => !where?.merchantId || p.merchantId === where.merchantId).length,
+        [...payments.values()].filter(
+          (p) => !where?.merchantId || p.merchantId === where.merchantId,
+        ).length,
       findMany: async () => [...payments.values()],
     },
     paymentAttempt: {

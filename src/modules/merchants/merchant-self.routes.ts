@@ -67,7 +67,11 @@ export async function registerMerchantSelfServiceRoutes(app: FastifyInstance): P
       }
 
       const input = issueKeySchema.parse(req.body);
-      const issued = await apiKeyService.issueMerchantKey(merchantId, input.scopes, input.description);
+      const issued = await apiKeyService.issueMerchantKey(
+        merchantId,
+        input.scopes,
+        input.description,
+      );
 
       await new AuditService(prisma).record({
         action: AUDIT_ACTIONS.ADMIN_ACTION,

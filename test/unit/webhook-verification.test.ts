@@ -30,9 +30,9 @@ describe('fortpesa webhook verification', () => {
   });
 
   it('rejects a webhook with no signature header at all', () => {
-    expect(() =>
-      verifyFortpesaWebhookSignature({ rawBody: body, headers: {} }),
-    ).toThrow(WebhookVerificationError);
+    expect(() => verifyFortpesaWebhookSignature({ rawBody: body, headers: {} })).toThrow(
+      WebhookVerificationError,
+    );
   });
 
   it('rejects a webhook with an incorrect signature', () => {
@@ -69,8 +69,8 @@ describe('fortpesa webhook verification', () => {
   });
 
   it('rejects a payload missing the required fields', () => {
-    expect(() => parseFortpesaWebhookPayload(JSON.stringify({ event: 'payment.succeeded' }))).toThrow(
-      WebhookVerificationError,
-    );
+    expect(() =>
+      parseFortpesaWebhookPayload(JSON.stringify({ event: 'payment.succeeded' })),
+    ).toThrow(WebhookVerificationError);
   });
 });

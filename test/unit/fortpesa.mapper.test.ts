@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { fromStkResponse, fromWebhookPayload, toStkRequest } from '../../src/providers/fortpesa/mapper.js';
+import {
+  fromStkResponse,
+  fromWebhookPayload,
+  toStkRequest,
+} from '../../src/providers/fortpesa/mapper.js';
 import { FortpesaApiError } from '../../src/providers/fortpesa/errors.js';
 
 describe('fortpesa mapper', () => {

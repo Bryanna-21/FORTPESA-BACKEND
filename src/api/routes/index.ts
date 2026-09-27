@@ -35,7 +35,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     }
 
     const isReady = checks.database && checks.redis;
-    return sendSuccess(reply, isReady ? 200 : 503, req.id, { status: isReady ? 'ready' : 'not_ready', checks });
+    return sendSuccess(reply, isReady ? 200 : 503, req.id, {
+      status: isReady ? 'ready' : 'not_ready',
+      checks,
+    });
   });
 
   await registerPaymentRoutes(app);

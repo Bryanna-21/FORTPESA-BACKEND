@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { issueSessionToken, verifySessionToken } from '../../src/infrastructure/security/sessionToken.js';
+import {
+  issueSessionToken,
+  verifySessionToken,
+} from '../../src/infrastructure/security/sessionToken.js';
 import { AuthenticationError } from '../../src/shared/errors/index.js';
 
 const basePayload = {
@@ -24,7 +27,9 @@ describe('session token', () => {
       JSON.stringify({ ...basePayload, role: 'ADMIN', expiresAt: Date.now() + 60_000 }),
     ).toString('base64url');
 
-    expect(() => verifySessionToken(`${tamperedPayload}.${signature}`)).toThrow(AuthenticationError);
+    expect(() => verifySessionToken(`${tamperedPayload}.${signature}`)).toThrow(
+      AuthenticationError,
+    );
     void payload;
   });
 

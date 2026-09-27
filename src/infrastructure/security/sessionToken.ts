@@ -33,7 +33,9 @@ function base64UrlDecode(input: string): string {
 
 export function issueSessionToken(payload: SessionTokenPayload): string {
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const signature = createHmac('sha256', getSessionSecret()).update(encodedPayload).digest('base64url');
+  const signature = createHmac('sha256', getSessionSecret())
+    .update(encodedPayload)
+    .digest('base64url');
   return `${encodedPayload}.${signature}`;
 }
 

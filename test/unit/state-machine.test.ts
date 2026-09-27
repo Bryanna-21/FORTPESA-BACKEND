@@ -28,12 +28,18 @@ describe('payment state machine', () => {
   });
 
   it('rejects skipping states, e.g. CREATED -> SUCCEEDED', () => {
-    expect(() => assertLegalTransition('CREATED', 'SUCCEEDED')).toThrow(InvalidStateTransitionError);
+    expect(() => assertLegalTransition('CREATED', 'SUCCEEDED')).toThrow(
+      InvalidStateTransitionError,
+    );
   });
 
   it('rejects any transition out of a terminal state', () => {
-    expect(() => assertLegalTransition('SUCCEEDED', 'PROCESSING')).toThrow(InvalidStateTransitionError);
-    expect(() => assertLegalTransition('CANCELLED', 'PROCESSING')).toThrow(InvalidStateTransitionError);
+    expect(() => assertLegalTransition('SUCCEEDED', 'PROCESSING')).toThrow(
+      InvalidStateTransitionError,
+    );
+    expect(() => assertLegalTransition('CANCELLED', 'PROCESSING')).toThrow(
+      InvalidStateTransitionError,
+    );
   });
 
   it('rejects re-entering the same state', () => {

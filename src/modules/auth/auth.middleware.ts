@@ -18,7 +18,10 @@ declare module 'fastify' {
   }
 }
 
-export async function requireAuthentication(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
+export async function requireAuthentication(
+  req: FastifyRequest,
+  _reply: FastifyReply,
+): Promise<void> {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     throw new AuthenticationError('Missing or malformed Authorization header.');
@@ -80,4 +83,3 @@ export function assertOwnsMerchant(
     throw new AuthorizationError('You do not have access to this resource.');
   }
 }
-

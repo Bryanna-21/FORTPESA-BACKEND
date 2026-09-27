@@ -27,7 +27,10 @@ describe('HMAC-SHA256 signature verification', () => {
 
   it('rejects a signature for a tampered body', () => {
     const signature = computeHmacSha256Hex(body, secret);
-    const tamperedBody = JSON.stringify({ event: 'payment.succeeded', data: { uuid: 'different-id' } });
+    const tamperedBody = JSON.stringify({
+      event: 'payment.succeeded',
+      data: { uuid: 'different-id' },
+    });
     expect(verifyHmacSha256(tamperedBody, signature, secret)).toBe(false);
   });
 

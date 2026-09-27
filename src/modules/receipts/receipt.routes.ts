@@ -15,7 +15,8 @@ export async function registerReceiptRoutes(app: FastifyInstance): Promise<void>
     { preHandler: [requireAuthentication, requireScope('PAYMENTS_READ')] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const merchantId = req.principal?.merchantId;
-      if (!merchantId) throw new AuthenticationError('This endpoint requires a merchant-scoped API key.');
+      if (!merchantId)
+        throw new AuthenticationError('This endpoint requires a merchant-scoped API key.');
 
       const { id } = idParamSchema.parse(req.params);
       const receipt = await receiptService.generate(id, merchantId);

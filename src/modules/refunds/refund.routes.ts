@@ -14,7 +14,8 @@ const failRefundSchema = z.object({ reason: z.string().max(255).optional() });
 
 function requireMerchant(req: FastifyRequest): string {
   const merchantId = req.principal?.merchantId;
-  if (!merchantId) throw new AuthenticationError('This endpoint requires a merchant-scoped API key.');
+  if (!merchantId)
+    throw new AuthenticationError('This endpoint requires a merchant-scoped API key.');
   return merchantId;
 }
 

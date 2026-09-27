@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { generateApiKey, splitApiKey, verifyApiKeySecret } from '../../src/infrastructure/security/apiKey.js';
+import {
+  generateApiKey,
+  splitApiKey,
+  verifyApiKeySecret,
+} from '../../src/infrastructure/security/apiKey.js';
 
 describe('API key security', () => {
   it('generates a merchant key with the configured prefix', () => {

@@ -120,9 +120,14 @@ export class FortpesaProvider implements PaymentProvider {
 
     const errorBody = json as FortpesaErrorResponse | undefined;
     const message =
-      errorBody?.error?.message ?? errorBody?.message ?? `Fortpesa returned HTTP ${response.statusCode}`;
+      errorBody?.error?.message ??
+      errorBody?.message ??
+      `Fortpesa returned HTTP ${response.statusCode}`;
 
-    log.warn({ url, status: response.statusCode, body: json }, 'Fortpesa returned an error response');
+    log.warn(
+      { url, status: response.statusCode, body: json },
+      'Fortpesa returned an error response',
+    );
     throw new FortpesaApiError(message, response.statusCode, { url, body: json });
   }
 }

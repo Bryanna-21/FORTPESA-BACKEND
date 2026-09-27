@@ -39,6 +39,7 @@ jobs:
       NODE_ENV: test
       DATABASE_URL: postgresql://fortpesa:fortpesa@localhost:5432/fortpesa_platform_test?schema=public
       REDIS_URL: redis://localhost:6379
+      LOG_LEVEL: info
       API_KEY_PEPPER: ci-test-api-key-pepper
       SESSION_SECRET: ci-test-session-secret
       FORTPESA_API_KEY: ci-test-fortpesa-key

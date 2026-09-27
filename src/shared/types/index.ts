@@ -1,18 +1,8 @@
 export type PaymentStatus =
-  | 'CREATED'
-  | 'PROCESSING'
-  | 'PENDING'
-  | 'SUCCEEDED'
-  | 'FAILED'
-  | 'EXPIRED'
-  | 'CANCELLED';
+  'CREATED' | 'PROCESSING' | 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'EXPIRED' | 'CANCELLED';
 
 export type ApiKeyScope =
-  | 'PAYMENTS_READ'
-  | 'PAYMENTS_WRITE'
-  | 'TRANSACTIONS_READ'
-  | 'REFUNDS_WRITE'
-  | 'ADMIN';
+  'PAYMENTS_READ' | 'PAYMENTS_WRITE' | 'TRANSACTIONS_READ' | 'REFUNDS_WRITE' | 'ADMIN';
 
 export interface AuthenticatedPrincipal {
   apiKeyId: string;

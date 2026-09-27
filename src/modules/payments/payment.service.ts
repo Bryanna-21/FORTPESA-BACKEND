@@ -6,7 +6,10 @@ import { LedgerService } from '../ledger/ledger.service.js';
 import { AuditService } from '../../infrastructure/audit/audit.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { normalizeKenyanPhoneNumber } from '../../shared/utilities/phone.js';
-import { assertSupportedCurrency, assertValidAmountMinorUnits } from '../../shared/utilities/money.js';
+import {
+  assertSupportedCurrency,
+  assertValidAmountMinorUnits,
+} from '../../shared/utilities/money.js';
 import {
   ConflictError,
   NotFoundError,
@@ -122,11 +125,15 @@ export class PaymentService {
       if (isUniqueConstraintViolation(err)) {
         // Lost the race to a concurrent identical request; return its result.
         const winning = await this.db.idempotencyKey.findUniqueOrThrow({
-          where: { scope_key: { scope: IDEMPOTENCY_SCOPE_PAYMENT_CREATE, key: ctx.idempotencyKey } },
+          where: {
+            scope_key: { scope: IDEMPOTENCY_SCOPE_PAYMENT_CREATE, key: ctx.idempotencyKey },
+          },
           include: { payment: true },
         });
         if (!winning.payment) {
-          throw new ConflictError('Payment creation for this idempotency key is still in progress.');
+          throw new ConflictError(
+            'Payment creation for this idempotency key is still in progress.',
+          );
         }
         return winning.payment;
       }
@@ -139,7 +146,8 @@ export class PaymentService {
   private async initiateWithProvider(payment: Payment, requestId: string): Promise<Payment> {
     await this.transition(payment.id, 'PROCESSING', requestId, AUDIT_ACTIONS.PAYMENT_PROCESSING);
 
-    const nextAttemptNo = (await this.db.paymentAttempt.count({ where: { paymentId: payment.id } })) + 1;
+    const nextAttemptNo =
+      (await this.db.paymentAttempt.count({ where: { paymentId: payment.id } })) + 1;
     const attempt = await this.db.paymentAttempt.create({
       data: {
         paymentId: payment.id,
@@ -318,10 +326,16 @@ export class PaymentService {
           ? AUDIT_ACTIONS.PAYMENT_FAILED
           : AUDIT_ACTIONS.PAYMENT_EXPIRED;
 
-    const updated = await this.transition(payment.id, params.status, params.requestId, auditAction, {
-      source: params.source,
-      ...params.metadata,
-    });
+    const updated = await this.transition(
+      payment.id,
+      params.status,
+      params.requestId,
+      auditAction,
+      {
+        source: params.source,
+        ...params.metadata,
+      },
+    );
 
     if (params.status === 'SUCCEEDED') {
       await new LedgerService(this.db).recordPayment({
@@ -382,7 +396,10 @@ export class PaymentService {
   }
 }
 
-export function assertPaymentBelongsToMerchant(payment: Payment | null, merchantId: string): Payment {
+export function assertPaymentBelongsToMerchant(
+  payment: Payment | null,
+  merchantId: string,
+): Payment {
   if (!payment || payment.merchantId !== merchantId) {
     throw new ValidationError('Payment does not belong to the authenticated merchant.');
   }

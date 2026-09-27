@@ -22,7 +22,11 @@ const envSchema = z.object({
   ADMIN_API_KEY_PREFIX: z.string().default('fpa_admin_'),
   MERCHANT_API_KEY_PREFIX: z.string().default('fpa_live_'),
   SESSION_SECRET: z.string().min(32),
-  SESSION_TTL_MINUTES: z.coerce.number().int().positive().default(60 * 12),
+  SESSION_TTL_MINUTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60 * 12),
 
   PAYMENT_EXPIRY_MINUTES: z.coerce.number().int().positive().default(15),
   MAX_PAYMENT_RETRY_ATTEMPTS: z.coerce.number().int().positive().default(3),
