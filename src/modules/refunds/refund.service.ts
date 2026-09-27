@@ -6,8 +6,8 @@ import { AUDIT_ACTIONS } from '../../shared/constants/index.js';
 
 /**
  * Fortpesa's public developer page confirms only the STK-push endpoint (see
- * docs/fortpesa.md) — no refund endpoint is documented anywhere Claude
- * could verify. Rather than invent one, this module tracks refund requests
+ * docs/fortpesa.md) — no confirmed refund endpoint is documented.
+ * Rather than invent one, this module tracks refund requests
  * as their own auditable record, distinct from actually moving money back:
  *
  *   REQUESTED  — recorded here, not yet sent anywhere
