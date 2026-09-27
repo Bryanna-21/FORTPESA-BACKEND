@@ -1,0 +1,350 @@
+openapi: 3.0.3
+info:
+  title: Fortpesa Payment Platform API
+  version: 1.0.0
+  description: >
+    Merchant-facing payment backend integrating Fortpesa (M-Pesa STK push)
+    for payment collection, reconciliation and ledgering. See
+    docs/fortpesa.md for which provider behaviors are confirmed versus
+    assumed pending Fortpesa's own developer documentation.
+servers:
+  - url: https://api.your-domain.example
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register a new merchant and its owner user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [merchantName, email, password]
+              properties:
+                merchantName: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 10 }
+      responses:
+        '201':
+          description: Session issued
+        '409':
+          $ref: '#/components/responses/Error'
+
+  /api/v1/auth/login:
+    post:
+      summary: Log in to the merchant dashboard
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Session issued
+        '401':
+          $ref: '#/components/responses/Error'
+
+  /api/v1/wallet/balance:
+    get:
+      summary: Read the Fortpesa platform wallet balance
+      responses:
+        '200':
+          description: Wallet balance
+
+  /api/v1/payments/{id}/refunds:
+    post:
+      summary: Request a refund for a succeeded payment (recorded, not auto-executed — see docs/security.md)
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: integer }
+                reason: { type: string }
+      responses:
+        '201':
+          description: Refund request recorded
+        '409':
+          $ref: '#/components/responses/Error'
+
+  /api/v1/payments:
+    post:
+      summary: Create a payment
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        '201':
+          description: Payment created (or returned unchanged for a repeated idempotency key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    get:
+      summary: List payments
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, default: 25, maximum: 100 }
+      responses:
+        '200':
+          description: A page of payments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentListResponse'
+
+  /api/v1/payments/{id}:
+    get:
+      summary: Get a payment by ID
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: The payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '404':
+          $ref: '#/components/responses/Error'
+
+  /api/v1/payments/{id}/status:
+    get:
+      summary: Get the current status of a payment
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      paymentId: { type: string, format: uuid }
+                      status:
+                        $ref: '#/components/schemas/PaymentStatus'
+
+  /api/v1/payments/{id}/retry:
+    post:
+      summary: Retry a failed or expired payment
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Retry initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '409':
+          $ref: '#/components/responses/Error'
+
+  /api/v1/payments/{id}/cancel:
+    post:
+      summary: Cancel a payment before it reaches the provider
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Payment cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+  /api/v1/webhooks/fortpesa:
+    post:
+      summary: Fortpesa webhook receiver (HMAC-SHA256 signed, not API-key authenticated)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Acknowledged
+        '400':
+          description: Signature verification or payload validation failed
+
+  /api/v1/transactions:
+    get:
+      summary: List provider transactions
+      responses:
+        '200':
+          description: A page of transactions
+
+  /api/v1/transactions/{id}:
+    get:
+      summary: Get a provider transaction by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The transaction
+        '404':
+          $ref: '#/components/responses/Error'
+
+  /api/v1/receipts/{id}:
+    get:
+      summary: Get a receipt for a succeeded payment
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Receipt
+        '409':
+          description: Payment has not succeeded yet
+
+  /health:
+    get:
+      summary: Liveness check
+      security: []
+      responses:
+        '200': { description: OK }
+
+  /ready:
+    get:
+      summary: Readiness check (database + Redis connectivity)
+      security: []
+      responses:
+        '200': { description: Ready }
+        '503': { description: Not ready }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    PaymentId:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Error:
+      description: Standard error envelope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    PaymentStatus:
+      type: string
+      enum: [CREATED, PROCESSING, PENDING, SUCCEEDED, FAILED, EXPIRED, CANCELLED]
+
+    CreatePaymentRequest:
+      type: object
+      required: [amount, phone, reference]
+      properties:
+        amount:
+          type: integer
+          description: Amount in integer minor units.
+          example: 1500
+        currency:
+          type: string
+          default: KES
+        phone:
+          type: string
+          example: '0712345678'
+        reference:
+          type: string
+          example: ORDER-10045
+        description:
+          type: string
+
+    PaymentResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            paymentId: { type: string, format: uuid }
+            status: { $ref: '#/components/schemas/PaymentStatus' }
+            amount: { type: integer }
+            currency: { type: string }
+            reference: { type: string }
+        requestId: { type: string }
+
+    PaymentListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+            pagination:
+              type: object
+              properties:
+                page: { type: integer }
+                pageSize: { type: integer }
+                total: { type: integer }
+
+    ErrorResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string }

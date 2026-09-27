@@ -1,0 +1,340 @@
+// Fortpesa Payment Platform — database schema
+//
+// Monetary values are always stored as integer minor units (cents / lowest
+// KES denomination). Never store money as Float or Decimal-with-rounding.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MERCHANT_OWNER
+  MERCHANT_STAFF
+}
+
+enum ApiKeyScope {
+  PAYMENTS_READ
+  PAYMENTS_WRITE
+  TRANSACTIONS_READ
+  REFUNDS_WRITE
+  ADMIN
+}
+
+enum PaymentStatus {
+  CREATED
+  PROCESSING
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentAttemptStatus {
+  INITIATED
+  PENDING
+  SUCCEEDED
+  FAILED
+  TIMED_OUT
+}
+
+enum LedgerEntryType {
+  PAYMENT
+  FEE
+  REFUND
+  ADJUSTMENT
+}
+
+enum RefundStatus {
+  REQUESTED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+}
+
+enum NotificationChannel {
+  SMS
+  EMAIL
+  PUSH
+  WEBHOOK
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum ReconciliationStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  merchantId   String?
+  merchant     Merchant? @relation(fields: [merchantId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@index([merchantId])
+}
+
+model Merchant {
+  id                 String   @id @default(uuid())
+  name               String
+  fortpesaShortcode  String?
+  fortpesaAccountRef String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  users          User[]
+  apiKeys        ApiKey[]
+  paymentOrders  PaymentOrder[]
+  payments       Payment[]
+  ledgerEntries  LedgerEntry[]
+  notifications  Notification[]
+
+  @@index([isActive])
+}
+
+model ApiKey {
+  id          String        @id @default(uuid())
+  merchantId  String?
+  merchant    Merchant?     @relation(fields: [merchantId], references: [id])
+  keyPrefix   String        @unique
+  hashedKey   String
+  scopes      ApiKeyScope[]
+  description String?
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@index([merchantId])
+}
+
+/// Represents the authoritative order/amount a payment is collected against.
+/// When an upstream order system exists, the amount here is what the backend
+/// trusts — never the amount supplied directly by the frontend at charge time.
+model PaymentOrder {
+  id          String   @id @default(uuid())
+  merchantId  String
+  merchant    Merchant @relation(fields: [merchantId], references: [id])
+  reference   String
+  amountMinor Int
+  currency    String   @default("KES")
+  description String?
+  createdAt   DateTime @default(now())
+
+  payments Payment[]
+
+  @@unique([merchantId, reference])
+  @@index([merchantId])
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  merchantId       String
+  merchant         Merchant      @relation(fields: [merchantId], references: [id])
+  paymentOrderId   String?
+  paymentOrder     PaymentOrder? @relation(fields: [paymentOrderId], references: [id])
+  idempotencyKeyId String?       @unique
+  idempotencyKey   IdempotencyKey? @relation(fields: [idempotencyKeyId], references: [id])
+
+  amountMinor     Int
+  currency        String        @default("KES")
+  phoneNormalized String
+  reference       String
+  description     String?
+  status          PaymentStatus @default(CREATED)
+
+  providerName String @default("fortpesa")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime?
+
+  attempts             PaymentAttempt[]
+  providerTransactions ProviderTransaction[]
+  events               PaymentEvent[]
+  ledgerEntries        LedgerEntry[]
+  refunds              Refund[]
+  notifications        Notification[]
+
+  @@index([merchantId, status])
+  @@index([merchantId, reference])
+  @@index([status, updatedAt])
+}
+
+/// One row per attempt to charge through the provider. A payment may have
+/// several attempts; earlier attempts are never overwritten.
+model PaymentAttempt {
+  id         String               @id @default(uuid())
+  paymentId  String
+  payment    Payment              @relation(fields: [paymentId], references: [id])
+  attemptNo  Int
+  status     PaymentAttemptStatus @default(INITIATED)
+  providerRequestPayload  Json?
+  providerResponsePayload Json?
+  failureReason           String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  providerTransaction ProviderTransaction?
+
+  @@unique([paymentId, attemptNo])
+  @@index([paymentId])
+}
+
+/// The provider's own view of a transaction. Never used as the sole primary
+/// key for our payment records — internal Payment.id remains authoritative.
+model ProviderTransaction {
+  id                  String   @id @default(uuid())
+  paymentId           String
+  payment             Payment  @relation(fields: [paymentId], references: [id])
+  paymentAttemptId    String?  @unique
+  paymentAttempt      PaymentAttempt? @relation(fields: [paymentAttemptId], references: [id])
+  providerName        String   @default("fortpesa")
+  providerTransactionId String @unique
+  providerReference   String?
+  rawStatus           String
+  amountMinor         Int
+  currency            String
+  metadata            Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([paymentId])
+}
+
+model PaymentEvent {
+  id        String   @id @default(uuid())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+  type      String
+  fromStatus PaymentStatus?
+  toStatus   PaymentStatus
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([paymentId, createdAt])
+}
+
+/// Raw inbound webhook deliveries, kept independently of PaymentEvent so
+/// duplicate/replayed deliveries can always be detected and audited even if
+/// signature verification fails.
+model WebhookEvent {
+  id                String   @id @default(uuid())
+  providerName      String   @default("fortpesa")
+  providerEventId   String?
+  signatureValid    Boolean
+  rawBody           String
+  headers           Json
+  paymentId         String?
+  processedAt       DateTime?
+  processingResult  String?
+  createdAt         DateTime @default(now())
+
+  @@unique([providerName, providerEventId])
+  @@index([paymentId])
+}
+
+model LedgerEntry {
+  id          String          @id @default(uuid())
+  merchantId  String
+  merchant    Merchant        @relation(fields: [merchantId], references: [id])
+  paymentId   String?
+  payment     Payment?        @relation(fields: [paymentId], references: [id])
+  type        LedgerEntryType
+  amountMinor Int
+  currency    String          @default("KES")
+  description String
+  /// Immutable — corrections are new rows, never updates to existing rows.
+  createdAt   DateTime        @default(now())
+
+  @@index([merchantId, createdAt])
+  @@index([paymentId])
+}
+
+model Refund {
+  id           String       @id @default(uuid())
+  paymentId    String
+  payment      Payment      @relation(fields: [paymentId], references: [id])
+  amountMinor  Int
+  reason       String?
+  status       RefundStatus @default(REQUESTED)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([paymentId])
+}
+
+model Notification {
+  id         String              @id @default(uuid())
+  merchantId String?
+  merchant   Merchant?           @relation(fields: [merchantId], references: [id])
+  paymentId  String?
+  payment    Payment?            @relation(fields: [paymentId], references: [id])
+  channel    NotificationChannel
+  status     NotificationStatus  @default(QUEUED)
+  payload    Json
+  error      String?
+  createdAt  DateTime            @default(now())
+  sentAt     DateTime?
+
+  @@index([paymentId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorUserId String?
+  actor      User?    @relation(fields: [actorUserId], references: [id])
+  actorType  String
+  action     String
+  paymentId  String?
+  requestId  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([paymentId])
+}
+
+/// Enforces exactly-once payment creation per (scope, key) pair at the
+/// database level via a unique constraint.
+model IdempotencyKey {
+  id           String   @id @default(uuid())
+  scope        String
+  key          String
+  requestHash  String
+  responseBody Json?
+  createdAt    DateTime @default(now())
+
+  payment Payment?
+
+  @@unique([scope, key])
+}
+
+model ReconciliationRun {
+  id             String               @id @default(uuid())
+  status         ReconciliationStatus @default(RUNNING)
+  paymentsChecked Int                 @default(0)
+  mismatchesFound Int                 @default(0)
+  corrected      Int                  @default(0)
+  startedAt      DateTime             @default(now())
+  finishedAt     DateTime?
+  errorMessage   String?
+}
