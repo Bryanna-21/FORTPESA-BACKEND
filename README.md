@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/exile-organization-logo.png" alt="Exile Organization" width="150"></p>
+
 # Fortpesa Payment Platform
 
 **Developed and maintained by Exile Organization**
