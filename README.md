@@ -1,5 +1,8 @@
 # Fortpesa Payment Platform
 
+**Developed and maintained by Exile Organization**
+© 2026 Exile Organization. All rights reserved.
+
 A standalone backend payment platform that lets an external frontend or
 merchant application collect M-Pesa payments through Fortpesa
 (fortpesa.co.ke), track their status, receive and verify webhook
@@ -8,6 +11,11 @@ maintain an auditable financial ledger.
 
 This is a backend service only. The frontend is a separate project and
 consumes this API over HTTPS/JSON; it never receives Fortpesa credentials.
+
+## Ownership
+
+This payment platform is developed and maintained by **Exile Organization**.
+See [`NOTICE.md`](NOTICE.md) for the project ownership and trademark notice.
 
 ## Why this exists
 

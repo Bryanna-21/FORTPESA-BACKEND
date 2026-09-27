@@ -2,6 +2,8 @@ openapi: 3.0.3
 info:
   title: Fortpesa Payment Platform API
   version: 1.0.0
+  contact:
+    name: Exile Organization
   description: >
     Merchant-facing payment backend integrating Fortpesa (M-Pesa STK push)
     for payment collection, reconciliation and ledgering. See
